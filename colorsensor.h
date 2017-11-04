@@ -1,89 +1,92 @@
 #pragma once
+
+#include <cstdint>
+#include <cstddef>
 #include "mbed.h"
 #include "color.h"
 
 namespace iotea {
 
-using ColorRGB = typename Color<uint8_t>;
-using ColorData = typename Color<int32_t>;
+    using ColorRGB = Color<uint8_t>;
+    using ColorData = Color<int32_t>;
 
-class ColorSensor {
-public:
-  enum class Frequency {
-    DOWN      = 0;
-    SCALE_2   = 1;
-    SCALE_20  = 2;
-    SCALE_100 = 3;
-  };
+    class ColorSensor {
+    public:
+        enum class Frequency {
+            DOWN = 0,
+            SCALE_2 = 1,
+            SCALE_20 = 2,
+            SCALE_100 = 3
+        };
 
-  ColorSensor(
-      PinName s0, PinName s1, PinName s2, PinName s3, PinName out) noexcept;
+        enum class Filter {
+            RED = 0,
+            BLUE = 1,
+            CLEAR = 2,
+            GREEN = 3
+        };
 
-  /**
-   * Sets frequency prescaler.
-   * Defaults to Frequency::SCALE_100
-   **/
-  void setFrequency(Frequency frequency) noexcept;
-  /**
-   * Sets calibration data for black color.
-   **/
-  void calibrateBlack(ColorData colorData) noexcept;
-  /**
-   * Sets calibration data for white color.
-   **/
-  void calibrateWhite(ColorData colorData) noexcept;
+        ColorSensor(
+                PinName s0, PinName s1, PinName s2, PinName s3, PinName out) noexcept;
 
-  /**
-   * Read sensor data in standard RGB form.
-   * @returns RGB color.
-   **/
-  ColorRGB getRGB() const noexcept;
-  /**
-   * Reads sensor data in raw form.
-   * @returns color raw data.
-   **/
-  ColorData getData() const noexcept;
+        /**
+         * Sets frequency prescaler.
+         * Defaults to Frequency::SCALE_100
+         **/
+        void setFrequency(Frequency frequency) noexcept;
 
-protected:
-  /// Output pin
-  PinName out;
-  /// Pins used for frequency scaler
-  PinName s0, s1;
-  /// Pins used for photodide filter
-  PinName s2, s3;
-  /// Sensor raw data in current read
-  ColorData colorData(0, 0, 0);
-  /// Sensor calibration data
-  ColorData calibrationBlack(6000, 6000, 6000);
-  ColorData calibrationWhite(55000, 55000, 55000);
+        /**
+         * Sets photodide filter pins.
+         **/
+        void setFilter(Filter filter) noexcept;
 
-private:
-  enum class Filter {
-    RED   = 0;
-    BLUE  = 1;
-    CLEAR = 2;
-    GREEN = 3;
-  };
+        /**
+         * Sets calibration data for black color.
+         **/
+        void calibrateBlack(ColorData colorData) noexcept;
 
-  /**
-   * Sets photodide filter pins.
-   **/
-  void setFilter(Filter filter) noexcept;
-  /**
-   * Increases current read counter.
-   **/
-  void increaseCounter() noexcept;
-  /**
-   * Reads counter value and saves it to the current state.
-   **/
-  void readCounter() noexcept;
+        /**
+         * Sets calibration data for white color.
+         **/
+        void calibrateWhite(ColorData colorData) noexcept;
 
-  /// Current state of the counter
-  Filter state;
-  Ticker ticker;
-  int32_t counter;
+        /**
+         * Read sensor data in standard RGB form.
+         * @returns RGB color.
+         **/
+        ColorRGB getRGB() const noexcept;
 
-  void convertRGB(ColorRGB *colorRGB) const noexcept;
-}
+        /**
+         * Reads sensor data in raw form.
+         * @returns color raw data.
+         **/
+        ColorData getData() const noexcept;
+
+    protected:
+        /// Pins used for frequency scaler
+        DigitalOut s0, s1;
+        /// Pins used for photodide filter
+        DigitalOut s2, s3;
+        /// Output pin
+        InterruptIn out;
+        /// Sensor raw data in current read
+        ColorData colorData{0, 0, 0};
+        /// Sensor calibration data
+        ColorData calibrationBlack{6000L, 6000L, 6000L};
+        ColorData calibrationWhite{55000L, 55000L, 55000L};
+
+    private:
+        /**
+         * Reads counter value and saves it to the current state.
+         **/
+        void readCounter() noexcept;
+
+        /// Current state of the counter
+        size_t state;
+        Ticker ticker;
+        int32_t counter;
+
+        void convertRGB(ColorRGB *colorRGB) const noexcept;
+    };
 
 }
