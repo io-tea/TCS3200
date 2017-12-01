@@ -66,23 +66,36 @@ ColorData ColorSensor::getData() const {
 }
 
 void ColorSensor::readCounter() noexcept {
-    int64_t *data = reinterpret_cast<int64_t *>(&colorData);
-    *(data + state) = counter;
+    switch (state) {
+        case 0:
+            colorData.red = counter;
+            setFilter(Filter::GREEN);
+            break;
+        case 1:
+            colorData.green = counter;
+            setFilter(Filter::BLUE);
+            break;
+        case 2:
+            colorData.blue = counter;
+            setFilter(Filter::RED);
+            break;
+    }
     state = (state + 1) % 3;
-    setFilter(stateFilter.at(state));
     counter = 0;
 }
 
 void ColorSensor::convertRGB(ColorRGB *colorRGB) const noexcept {
     int32_t value;
-    auto rgb = reinterpret_cast<uint8_t *>(colorRGB);
-    auto data = const_cast<int32_t *>(reinterpret_cast<const int32_t *>(&colorData));
-    auto black = const_cast<int32_t *>(reinterpret_cast<const int32_t *>(&calibrationBlack));
-    auto white = const_cast<int32_t *>(reinterpret_cast<const int32_t *>(&calibrationWhite));
 
-    for (size_t i = 0; i < 3; i++) {
-        value = (*(data + i) - *(black + i)) * 256;
-        value /= *(white + i) - *(black + i);
-        *(rgb + i) = static_cast<uint8_t>(clamp(value, 0L, 255L));
-    }
+    value = (colorData.red - calibrationBlack.red) * 256;
+    value /= calibrationWhite.red - calibrationBlack.red;
+    colorRGB->red = static_cast<uint8_t>(clamp(value, 0L, 255L));
+
+    value = (colorData.green - calibrationBlack.green) * 256;
+    value /= calibrationWhite.green - calibrationBlack.green;
+    colorRGB->green = static_cast<uint8_t>(clamp(value, 0L, 255L));
+
+    value = (colorData.blue - calibrationBlack.blue) * 256;
+    value /= calibrationWhite.blue - calibrationBlack.blue;
+    colorRGB->blue = static_cast<uint8_t>(clamp(value, 0L, 255L));
 }

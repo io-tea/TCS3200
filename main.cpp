@@ -9,8 +9,8 @@ int main() {
     serial.baud(115200);
     while (true) {
         if (!button) {
-            iotea::ColorRGB color = color_sensor.getRGB();
-            serial.printf("#%x%x%x\r\n", color.red, color.green, color.blue);
+            iotea::ColorData color = color_sensor.getData();
+            serial.printf("#%d %d %d\r\n", color.red, color.green, color.blue);
         }
     }
 }
